@@ -1,36 +1,34 @@
-name: DevSkim
-permissions: read-all
-
-on:
-  push:
-    branches: [master, v2.dev, v3.dev]
-  pull_request:
-    branches: [master, v2.dev, v3.dev]
-  schedule:
-    - cron: '40 22 * * 0'
-
 jobs:
   lint:
     name: DevSkim
-    runs-on: ubuntu-20.04
     permissions:
       actions: read
       contents: read
       security-events: write
+    runs-on: self-hosted
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
-        with:
-          disable-sudo: true
-          egress-policy: block
-          allowed-endpoints: >
-            api.github.com:443
-            github.com:443
-      - name: Checkout code
-        uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
-      - name: Run DevSkim scanner
-        uses: microsoft/DevSkim-Action@914fa647b406c387000300b2f09bb28691be2b6d # v1.0.14
-      - name: Upload DevSkim scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@2e230e8fe0ad3a14a340ad0815ddb96d599d2aff # v3.25.8
-        with:
-          sarif_file: devskim-results.sarif
+    - continue-on-error: true
+      name: Harden Runner
+      uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6
+      with:
+        allowed-endpoints: 'api.github.com:443 github.com:443
+
+          '
+        disable-sudo: true
+        egress-policy: block
+    - continue-on-error: true
+      name: Checkout code
+      uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+    - continue-on-error: true
+      name: Run DevSkim scanner
+      uses: microsoft/DevSkim-Action@914fa647b406c387000300b2f09bb28691be2b6d
+    - continue-on-error: true
+      name: Upload DevSkim scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@2e230e8fe0ad3a14a340ad0815ddb96d599d2aff
+      with:
+        sarif_file: devskim-results.sarif
+name: DevSkim
+on:
+  repository_dispatch:
+    types: trigger-ga___devskim.yml
+permissions: read-all

@@ -1,35 +1,38 @@
-name: release
-on:
-  release:
-    types: [created]
-permissions: read-all
-
 env:
   DEVELOCITY_ACCESS_KEY: ${{ secrets.DEVELOCITY_ACCESS_KEY }}
   JAVA_VERSION: 11
-
 jobs:
   release:
-    runs-on: ubuntu-latest
     if: github.event.repository.fork == false
+    runs-on: self-hosted
     steps:
-      - name: Harden Runner
-        uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6 # v2.8.1
-        with:
-          disable-sudo: true
-          egress-policy: audit
-      - uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29 # v4.1.6
-      - name: Releasing
-        uses: ./.github/actions/run-gradle
-        env:
-          ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.NEXUS_USERNAME }}
-          ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.NEXUS_PASSWORD }}
-          ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
-          ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.OSSRH_GPG_SECRET_KEY_ID }}
-          ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD }}
-        with:
-          java: ${{ env.JAVA_VERSION }}
-          token: ${{ secrets.GITHUB_TOKEN }}
-          arguments: >
-            publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease
-            --no-configuration-cache
+    - continue-on-error: true
+      name: Harden Runner
+      uses: step-security/harden-runner@17d0e2bd7d51742c71671bd19fa12bdc9d40a3d6
+      with:
+        disable-sudo: true
+        egress-policy: audit
+    - continue-on-error: true
+      uses: actions/checkout@a5ac7e51b41094c92402da3b24376905380afc29
+    - continue-on-error: true
+      env:
+        ORG_GRADLE_PROJECT_signingKey: ${{ secrets.OSSRH_GPG_SECRET_KEY }}
+        ORG_GRADLE_PROJECT_signingKeyId: ${{ secrets.OSSRH_GPG_SECRET_KEY_ID }}
+        ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.OSSRH_GPG_SECRET_KEY_PASSWORD
+          }}
+        ORG_GRADLE_PROJECT_sonatypePassword: ${{ secrets.NEXUS_PASSWORD }}
+        ORG_GRADLE_PROJECT_sonatypeUsername: ${{ secrets.NEXUS_USERNAME }}
+      name: Releasing
+      uses: ./.github/actions/run-gradle
+      with:
+        arguments: 'publishToSonatype closeAndReleaseSonatypeStagingRepository -Prelease
+          --no-configuration-cache
+
+          '
+        java: ${{ env.JAVA_VERSION }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+name: release
+on:
+  repository_dispatch:
+    types: trigger-ga___release.yml
+permissions: read-all
